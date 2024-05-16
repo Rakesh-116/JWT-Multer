@@ -17,10 +17,11 @@ const port = process.env.PORT || 3000;
 
 import loginRouter from './routes/login.route.js'
 import registerRouter from './routes/register.route.js'
+import homeRouter from './routes/home.route.js'
 
 app.post('/api/', loginRouter)
 app.post('/api/register', registerRouter)
-// app.use('/api/home', )
+app.post('/api/home', homeRouter)
 
 
 app.listen(port, () => {
