@@ -1,0 +1,44 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import pool from '../db/connect.db.js'
+
+const LoginController = async (req, res) => {
+    const {username, password} = req.body;
+    const user = await pool.query('SELECT * FROM app_user WHERE username = $1', [username]);
+    if (user.rows.length === 0) {
+        return res.json({
+            message: "User not registered"
+        })
+    }
+    const hashedPassword = user.rows[0].password;
+
+    try {
+        if (user && await bcrypt.compare(password, hashedPassword)) {
+            const token = jwt.sign({
+                id: user.rows[0].id
+            }, process.env.MYSECRET_KEY, {
+                expiresIn: '1h'
+            })
+            const options = {
+                expires: new Date(Date.now() + 1*24*60*60*1000),
+                httpOnly: true
+            }
+            res.cookie("token", token, options).json({
+                success: true,
+                token,
+                user
+            })
+        } else {
+            return res.json({
+                message: "Incorrect password"
+            });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.json({
+            error: "An error occurred while comparing passwords"
+        });
+    }
+}
+
+export default LoginController;
