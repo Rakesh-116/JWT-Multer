@@ -1,24 +1,31 @@
 import fs from 'fs'
 import { google } from 'googleapis'
-import { upload } from '../middleware/multer.middleware.js';
+import KEYFILEPATH from '../../googleApi.json' assert { type: 'json' };
+import { Readable } from 'stream';
 
-const KEYFILEPATH = '../../googleApi.json';
 const SCOPES = ['https://www.googleapis.com/auth/drive']
 
-const getGoogleAuth = async () => {
-    const auth = new google.auth.GoogleAuth({
-        keyFile: KEYFILEPATH,
-        scopes: SCOPES
-    });
-    return auth.getClient();
-};
+async function getGoogleAuth() {
+    const jwtClient = new google.auth.JWT(
+      KEYFILEPATH.client_email,
+      null,
+      KEYFILEPATH.private_key,
+      SCOPES
+    );
+    await jwtClient.authorize();
+    return jwtClient;
+}
 
 const HomeController = async (req, res) => {
     try {
+        const file = req.file;
+
+        if(!file){
+            res.status(404).send("No file uploaded");
+        }
+
         const auth = await getGoogleAuth();
         const drive = google.drive({ version: 'v3', auth});
-
-        const file = req.file;
 
         const fileMetaData = {
             'name': file.originalname,
@@ -27,7 +34,7 @@ const HomeController = async (req, res) => {
 
         const media = {
             mimeType: file.mimeType,
-            body: fs.createReadStream(file.path)
+            body:  Readable.from([file.buffer]) 
         };
 
         const response = await drive.files.create({

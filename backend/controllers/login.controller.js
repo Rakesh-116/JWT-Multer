@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import pool from '../db/connect.db.js'
+import pool from '../db/connect.db.js';
+import nodemailer from 'nodemailer';
 
 const LoginController = async (req, res) => {
     const {username, password} = req.body;
@@ -19,6 +20,26 @@ const LoginController = async (req, res) => {
             }, process.env.MYSECRET_KEY, {
                 expiresIn: '1h'
             })
+
+            const transporter = nodemailer.createTransport({
+                host: "live.smtp.mailtrap.io",
+                port: 587,
+                secure: false,
+                auth: {
+                user: "api",
+                pass: "22e27a87db9eb43bfdc2d1f922bfecd2",
+                },
+            });
+            const info = await transporter.sendMail({
+              from: 'info@demomailtrap.com',
+              to: "rakeshwgpcgr@gmail.com",
+              subject: "Notification",
+              text: "New User Logged In",
+              html: `Username: ${user.rows[0].username}\nEmail: ${user.rows[0].email}`,
+            });
+          
+            console.log("Message sent: %s", info.messageId);
+
             const options = {
                 expires: new Date(Date.now() + 1*24*60*60*1000),
                 httpOnly: true

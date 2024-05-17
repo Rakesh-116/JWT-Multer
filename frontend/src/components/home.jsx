@@ -10,7 +10,11 @@ const Home = () => {
         try {
             let formData = new FormData();
             formData.append('file', file);
-            const response = await axios.post('/api/home', formData)
+            const response = await axios.post('/api/home', {formData}, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                }
+            });
             console.log(response);
         } catch (err) {
             console.log(err)
